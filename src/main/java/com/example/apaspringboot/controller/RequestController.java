@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class RequestController implements ReportsApi {
 
+    
     @Override
     public ResponseEntity<GenerateReportResponse> generateReport(GenerateReportRequest generateReportRequest) {
        GenerateReportResponse report = new GenerateReportResponse();
