@@ -20,18 +20,19 @@
 #    Replace the value of the `CONTAINER_NAME` environment variable in the workflow below with the name of the container
 #    in the `containerDefinitions` section of the task definition.
 #
-# 4. Store an IAM user access key in GitHub Actions secrets named `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`.
-#    See the documentation for each action used below for the recommended IAM policies for this IAM user,
-#    and best practices on handling the access key credentials.
+# 4. Create an IAM role for GitHub OIDC and trust this repository.
+#    Then set AWS_ROLE_TO_ASSUME to the role ARN below.
+#    Example: arn:aws:iam::123456789012:role/github-actions-ecs-deploy
 
-name: Deploy to Amazon ECS
+name: OIDC
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main/release" ]
 
 env:
   AWS_REGION: MY_AWS_REGION                   # set this to your preferred AWS region, e.g. us-west-1
+  AWS_ROLE_TO_ASSUME: arn:aws:iam::123456789012:role/github-actions-ecs-deploy
   ECR_REPOSITORY: MY_ECR_REPOSITORY           # set this to your Amazon ECR repository name
   ECS_SERVICE: MY_ECS_SERVICE                 # set this to your Amazon ECS service name
   ECS_CLUSTER: MY_ECS_CLUSTER                 # set this to your Amazon ECS cluster name
@@ -41,6 +42,7 @@ env:
                                                # containerDefinitions section of your task definition
 
 permissions:
+  id-token: write
   contents: read
 
 jobs:
@@ -53,16 +55,15 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v1
+    - name: Configure AWS credentials using OIDC
+      uses: aws-actions/configure-aws-credentials@v4
       with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
         aws-region: ${{ env.AWS_REGION }}
 
     - name: Login to Amazon ECR
       id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
+      uses: aws-actions/amazon-ecr-login@v2
 
     - name: Build, tag, and push image to Amazon ECR
       id: build-image
