@@ -1,0 +1,234 @@
+openapi: 3.0.3
+
+info:
+  title: Academic Report API
+  description: API for generating grounded academic reports from verified sources.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+
+paths:
+
+  /api/reports/generate:
+    post:
+      summary: Generate an academic report
+      description: >
+        Accepts a research topic and description, finds relevant academic
+        sources, generates an initial report, and returns the structured
+        document together with the sources used.
+
+      operationId: generateReport
+
+      tags:
+        - Reports
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateReportRequest'
+
+      responses:
+        '200':
+          description: Report generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateReportResponse'
+
+        '400':
+          description: Invalid request
+
+        '500':
+          description: Report generation failed
+
+
+components:
+
+  schemas:
+
+    GenerateReportRequest:
+      type: object
+      required:
+        - topic
+        - description
+
+      properties:
+
+        topic:
+          type: string
+          example: AI guardrails in enterprise applications
+
+        description:
+          type: string
+          example: >
+            Analyze modern guardrail architectures, their limitations,
+            and their effectiveness in AI-enabled backend systems.
+
+        academicLevel:
+          type: string
+          enum:
+            - undergraduate
+            - graduate
+            - doctoral
+          default: graduate
+
+        reportLength:
+          type: string
+          enum:
+            - short
+            - 3-5
+            - 5-7
+            - 8-10
+          default: 5-7
+
+        citationStyle:
+          type: string
+          enum:
+            - apa7
+          default: apa7
+
+        recentSourcesOnly:
+          type: boolean
+          default: true
+
+
+    GenerateReportResponse:
+      type: object
+      required:
+        - reportId
+        - document
+        - sources
+
+      properties:
+
+        reportId:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+
+        document:
+          $ref: '#/components/schemas/GeneratedDocument'
+
+        sources:
+          type: array
+          items:
+            $ref: '#/components/schemas/AcademicSource'
+
+
+    GeneratedDocument:
+      type: object
+      required:
+        - title
+        - sections
+
+      properties:
+
+        title:
+          type: string
+          example: AI Guardrails in Enterprise Applications
+
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentSection'
+
+
+    DocumentSection:
+      type: object
+      required:
+        - heading
+        - paragraphs
+
+      properties:
+
+        heading:
+          type: string
+          example: Introduction
+
+        paragraphs:
+          type: array
+          items:
+            $ref: '#/components/schemas/Paragraph'
+
+
+    Paragraph:
+      type: object
+      required:
+        - text
+
+      properties:
+
+        text:
+          type: string
+          example: >
+            Artificial intelligence systems increasingly require mechanisms
+            capable of constraining model behavior in production environments.
+
+        citations:
+          type: array
+          items:
+            type: string
+          example:
+            - SOURCE_1
+            - SOURCE_3
+
+
+    AcademicSource:
+      type: object
+      required:
+        - id
+        - title
+        - authors
+        - verified
+
+      properties:
+
+        id:
+          type: string
+          example: SOURCE_1
+
+        title:
+          type: string
+          example: Guardrails for Large Language Models
+
+        authors:
+          type: array
+          items:
+            type: string
+          example:
+            - John Smith
+            - Maria Lee
+
+        year:
+          type: integer
+          example: 2025
+
+        journal:
+          type: string
+          example: Journal of Artificial Intelligence Systems
+
+        doi:
+          type: string
+          nullable: true
+          example: 10.1234/example.2025.001
+
+        url:
+          type: string
+          nullable: true
+          example: https://doi.org/10.1234/example.2025.001
+
+        provider:
+          type: string
+          enum:
+            - openalex
+            - crossref
+            - arxiv
+          example: openalex
+
+        verified:
+          type: boolean
+          example: true
